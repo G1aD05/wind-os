@@ -2,7 +2,7 @@
 ### Description:
 Wind OS is a simple os made in python that has many features such as a terminal, creating multiple users, and creating files (File downloading feature coming soon)\
 \
-It only work on macOS though
+So I just found out it works on windows and mac not sure how but it does.
 ### Features
 1. Run an app
 2. Make a user
