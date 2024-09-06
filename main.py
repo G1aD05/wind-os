@@ -2,8 +2,11 @@ import os
 from pathlib import Path
 import subprocess
 import shutil
+from urllib.request import urlretrieve
+import importlib.util
+import importlib.machinery
 
-__version__ = "1.0.0-alpha"
+__version__ = "1.0.2.1-alpha"
 
 
 class Main:
@@ -11,6 +14,8 @@ class Main:
         self.username = None
         self.password = None
         self.login_attempts = 0
+        self.boot_start_function = self.login
+        self.setup_start_function = self.setup
 
     def setup(self):
         print("\nHello, let's get your device set up!")
@@ -23,9 +28,8 @@ class Main:
         os.mkdir('home/.system')
         os.mkdir(f'home/{username}')
         os.mkdir(f'home/Applications')
-        with open(Path(f"home/Applications/time.py"), 'w') as file:
-            file.write("""import datetime as dt
-print(f" The time and date right now is {dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}")""")
+        urlretrieve('https://raw.githubusercontent.com/G1aD05/wind-os/main/apps/downloader.py', 'home/Applications/downloader.py')
+        urlretrieve('https://raw.githubusercontent.com/G1aD05/wind-os/main/apps/time.py', 'home/Applications/time.py')
         os.mkdir(f"home/{username}/.secrets")
         os.mkdir(f"home/{username}/Downloads")
         os.mkdir(f"home/{username}/Documents")
@@ -95,10 +99,17 @@ print(f" The time and date right now is {dt.datetime.now().strftime("%Y-%m-%d %H
         """)
         selection = input("Selection: ")
         if selection == "1":
-            app_name = input("App name: ")
-            result = subprocess.run(["python", f"home/Applications/{app_name}.py"], capture_output=True, text=True)
-            print(f"\n{result.stdout}\n")
-            self.main()
+            try:
+                app_name = input("App name: ")
+                loader = importlib.machinery.SourceFileLoader(app_name, f'home/Applications/{app_name}.py')
+                spec = importlib.util.spec_from_loader(loader.name, loader)
+                module = importlib.util.module_from_spec(spec)
+                loader.exec_module(module)
+                module.main()
+                self.main()
+            except:
+                print("Failed to run app")
+                self.main()
         elif selection == "2":
             self.new_user()
         elif selection == "3":
@@ -139,14 +150,49 @@ print(f" The time and date right now is {dt.datetime.now().strftime("%Y-%m-%d %H
         else:
             self.main()
 
+    def bios(self):
+        print("""1. Boot the OS
+2. Configure boot start function
+3. Configure setup start function
+        """)
+        selection = input("Selection: ")
+        if selection == "1":
+            if not os.path.isdir(f"{os.getcwd()}/home"):
+                self.setup_start_function()
+            else:
+                print("Successfully booted!")
+                self.boot_start_function()
+        elif selection == "2":
+            function = input("Function name (ex: self.main NO PARENTHESES): ")
+            try:
+                self.boot_start_function = getattr(self, function)
+                self.bios()
+            except:
+                self.panic("FUNCTION_NOT_FOUND_ERROR")
+        elif selection == "3":
+            function = input("Function name (ex: main NO PARENTHESES): ")
+            try:
+                self.setup_start_function = getattr(self, function)
+                self.bios()
+            except:
+                self.panic("FUNCTION_NOT_FOUND_ERROR")
+
     def startup(self):
         print("Starting...")
-        if not os.path.isdir(f"{os.getcwd()}/home"):
-            self.setup()
-            return ""
-        else:
-            print("Successfully booted!")
-            self.login()
+        print("""1. Install WindOS/Boot WindOS
+2. Open the BIOS
+        """)
+        selection = input("Selection: ")
+        if selection == "1":
+            if not os.path.isdir(f"{os.getcwd()}/home"):
+                self.setup_start_function()
+            else:
+                print("Successfully booted!")
+                self.boot_start_function()
+        elif selection == "2":
+            print("Opening the BIOS")
+            print("\nBIOS Launched!")
+            self.bios()
 
     def settings(self):
 
