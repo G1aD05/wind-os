@@ -1,10 +1,12 @@
 import os
+import time
 from pathlib import Path
 import subprocess
 import shutil
 from urllib.request import urlretrieve
 import importlib.util
 import importlib.machinery
+import logging
 
 __version__ = "1.0.2.1-alpha"
 
@@ -28,7 +30,8 @@ class Main:
         os.mkdir('home/.system')
         os.mkdir(f'home/{username}')
         os.mkdir(f'home/Applications')
-        urlretrieve('https://raw.githubusercontent.com/G1aD05/wind-os/main/apps/downloader.py', 'home/Applications/downloader.py')
+        urlretrieve('https://raw.githubusercontent.com/G1aD05/wind-os/main/apps/downloader.py',
+                    'home/Applications/downloader.py')
         urlretrieve('https://raw.githubusercontent.com/G1aD05/wind-os/main/apps/time.py', 'home/Applications/time.py')
         os.mkdir(f"home/{username}/.secrets")
         os.mkdir(f"home/{username}/Downloads")
@@ -37,6 +40,7 @@ class Main:
             file.write(password)
         with open(Path(f"home/.system/device-name.txt"), 'w') as file:
             file.write(input("Let's name your device: "))
+        open(Path(f"home/.system/logs"), 'w')
         print("Setup complete!")
         self.login()
 
@@ -57,7 +61,10 @@ class Main:
         self.login()
 
     def panic(self, code):
-        raise Exception(f"WindOS has crashed! Error code: {code}")
+        if os.path.isfile('home/.system/logs'):
+            file = open('home/.system/logs', 'r').read()
+            open('home/.system/logs', 'w').write(f'{file}\n{f"WindOS has crashed! Error code: {code}"}')
+        logging.error(Exception(f"WindOS has crashed! Error code: {code}"))
 
     def login(self):
         print("\nPlease log in.")
@@ -106,9 +113,10 @@ class Main:
                 module = importlib.util.module_from_spec(spec)
                 loader.exec_module(module)
                 module.main()
+                time.sleep(3)
                 self.main()
             except:
-                print("Failed to run app")
+                print('Failed to run app!')
                 self.main()
         elif selection == "2":
             self.new_user()
@@ -176,6 +184,8 @@ class Main:
                 self.bios()
             except:
                 self.panic("FUNCTION_NOT_FOUND_ERROR")
+        else:
+            self.bios()
 
     def startup(self):
         print("Starting...")
@@ -230,7 +240,7 @@ class Main:
             self.main()
 
     def terminal(self):
-        command = input(f"{self.username}@{open('home/.system/device-name.txt', 'r').read()} % ")
+        command = input(f"{self.username}@{open('home/.system/device-name.txt', 'r').read()} {os.getcwd()} % ")
         if command == "exit":
             self.main()
         else:
