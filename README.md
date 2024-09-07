@@ -16,4 +16,4 @@ So I just found out it works on windows and mac not sure how but it does.
 10. Settings
 
 ##### Version
-1.0.2.1-alpha
+1.0.2.4-alpha
